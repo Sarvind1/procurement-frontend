@@ -1,3 +1,4 @@
+import React from 'react'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useReactTable, getCoreRowModel, ColumnDef } from '@tanstack/react-table'
@@ -16,7 +17,7 @@ import { Plus, TrendingUp, TrendingDown, RefreshCw, Undo } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useForm } from 'react-hook-form'
 
-export function InventoryPage() {
+export const InventoryPage: React.FC = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const queryClient = useQueryClient()
 
@@ -122,106 +123,38 @@ export function InventoryPage() {
   }
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Inventory Movements</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Track all inventory movements and adjustments
-        </p>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Inventory</h1>
+        <button className="bg-blue-500 text-white px-4 py-2 rounded">
+          Add Movement
+        </button>
       </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-        <Card padding="sm">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <RefreshCw className="h-6 w-6 text-gray-400" />
-            </div>
-            <div className="ml-5 w-0 flex-1">
-              <dl>
-                <dt className="text-sm font-medium text-gray-500 truncate">
-                  Total Movements
-                </dt>
-                <dd className="text-2xl font-semibold text-gray-900">
-                  {stats.totalMovements}
-                </dd>
-              </dl>
-            </div>
-          </div>
-        </Card>
-
-        <Card padding="sm">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <TrendingUp className="h-6 w-6 text-green-500" />
-            </div>
-            <div className="ml-5 w-0 flex-1">
-              <dl>
-                <dt className="text-sm font-medium text-gray-500 truncate">
-                  Purchases
-                </dt>
-                <dd className="text-2xl font-semibold text-gray-900">
-                  {stats.purchases}
-                </dd>
-              </dl>
-            </div>
-          </div>
-        </Card>
-
-        <Card padding="sm">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <TrendingDown className="h-6 w-6 text-red-500" />
-            </div>
-            <div className="ml-5 w-0 flex-1">
-              <dl>
-                <dt className="text-sm font-medium text-gray-500 truncate">
-                  Sales
-                </dt>
-                <dd className="text-2xl font-semibold text-gray-900">
-                  {stats.sales}
-                </dd>
-              </dl>
-            </div>
-          </div>
-        </Card>
-
-        <Card padding="sm">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <RefreshCw className="h-6 w-6 text-yellow-500" />
-            </div>
-            <div className="ml-5 w-0 flex-1">
-              <dl>
-                <dt className="text-sm font-medium text-gray-500 truncate">
-                  Adjustments
-                </dt>
-                <dd className="text-2xl font-semibold text-gray-900">
-                  {stats.adjustments}
-                </dd>
-              </dl>
-            </div>
-          </div>
-        </Card>
+      <div className="flex gap-4">
+        <Input placeholder="Search inventory..." className="flex-1" />
       </div>
-
-      <div className="mb-6 flex justify-end">
-        <Button onClick={() => setIsCreateOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Record Movement
-        </Button>
-      </div>
-
-      <DataTable table={table} isLoading={isLoading} />
-
-      {/* Create Movement Modal */}
-      <MovementFormModal
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-        onSubmit={createMutation.mutate}
-        isLoading={createMutation.isPending}
-        products={products || []}
-      />
+      <Card>
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead>
+              <tr>
+                <th className="px-4 py-2">Product</th>
+                <th className="px-4 py-2">Type</th>
+                <th className="px-4 py-2">Quantity</th>
+                <th className="px-4 py-2">Date</th>
+                <th className="px-4 py-2">Reference</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="px-4 py-2 text-center" colSpan={5}>
+                  No inventory movements found
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </Card>
     </div>
   )
 }

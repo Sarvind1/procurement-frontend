@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React from 'react'
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -7,9 +7,9 @@ import { Upload, Download, FileText, AlertCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { downloadFile } from '@/lib/utils'
 
-export function ImportExportPage() {
-  const [importType, setImportType] = useState('products')
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+export const ImportExportPage: React.FC = () => {
+  const [importType, setImportType] = React.useState('products')
+  const [selectedFile, setSelectedFile] = React.useState<File | null>(null)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -49,146 +49,103 @@ PROD-001,Sample Product,99.99,49.99,100,10`
   ]
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Import/Export</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Import data from CSV files or export your data
-        </p>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Import/Export</h1>
       </div>
-
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        {/* Import Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
-          <CardHeader>
-            <div className="flex items-center">
-              <Upload className="h-5 w-5 text-gray-400 mr-2" />
-              <CardTitle>Import Data</CardTitle>
-            </div>
-            <CardDescription>
-              Upload CSV files to import data into the system
-            </CardDescription>
-          </CardHeader>
-          <div className="p-6 pt-0 space-y-4">
-            <Select
-              label="Import Type"
-              value={importType}
-              onChange={(e) => setImportType(e.target.value)}
-              options={importOptions}
-            />
-
+          <h2 className="text-lg font-semibold mb-4">Import Data</h2>
+          <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Select File
-              </label>
-              <input
+              <label className="block text-sm font-medium mb-2">Import Type</label>
+              <select
+                className="w-full p-2 border rounded"
+                value={importType}
+                onChange={(e) => setImportType(e.target.value)}
+              >
+                {importOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">File</label>
+              <Input
                 type="file"
-                accept=".csv"
+                accept=".csv,.xlsx"
                 onChange={handleFileChange}
-                className="block w-full text-sm text-gray-500
-                  file:mr-4 file:py-2 file:px-4
-                  file:rounded-md file:border-0
-                  file:text-sm file:font-medium
-                  file:bg-primary-50 file:text-primary-700
-                  hover:file:bg-primary-100"
               />
-              {selectedFile && (
-                <p className="mt-2 text-sm text-gray-600">
-                  Selected: {selectedFile.name}
-                </p>
-              )}
             </div>
-
-            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
-              <div className="flex">
-                <AlertCircle className="h-5 w-5 text-yellow-400" />
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-yellow-800">
-                    Import Guidelines
-                  </h3>
-                  <div className="mt-2 text-sm text-yellow-700">
-                    <ul className="list-disc list-inside space-y-1">
-                      <li>File must be in CSV format</li>
-                      <li>First row should contain column headers</li>
-                      <li>Download templates for correct format</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <Button
+            <button
+              className="w-full bg-blue-500 text-white px-4 py-2 rounded"
               onClick={handleImport}
               disabled={!selectedFile}
-              className="w-full"
             >
-              <Upload className="h-4 w-4 mr-2" />
-              Import {importType}
-            </Button>
+              Import
+            </button>
           </div>
         </Card>
-
-        {/* Export Section */}
         <Card>
-          <CardHeader>
-            <div className="flex items-center">
-              <Download className="h-5 w-5 text-gray-400 mr-2" />
-              <CardTitle>Export Data</CardTitle>
-            </div>
-            <CardDescription>
-              Download your data in CSV format
-            </CardDescription>
-          </CardHeader>
-          <div className="p-6 pt-0 space-y-4">
-            {importOptions.map((option) => (
-              <div
-                key={option.value}
-                className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+          <h2 className="text-lg font-semibold mb-4">Export Data</h2>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Export Type</label>
+              <select
+                className="w-full p-2 border rounded"
+                value={importType}
+                onChange={(e) => setImportType(e.target.value)}
               >
-                <div className="flex items-center">
-                  <FileText className="h-5 w-5 text-gray-400 mr-3" />
-                  <div>
-                    <p className="font-medium">{option.label}</p>
-                    <p className="text-sm text-gray-500">
-                      Export all {option.label.toLowerCase()} data
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleExport(option.value)}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Export
-                </Button>
-              </div>
-            ))}
+                {importOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Format</label>
+              <select
+                className="w-full p-2 border rounded"
+                value={importType}
+                onChange={(e) => setImportType(e.target.value)}
+              >
+                <option value="csv">CSV</option>
+                <option value="xlsx">Excel</option>
+              </select>
+            </div>
+            <button
+              className="w-full bg-green-500 text-white px-4 py-2 rounded"
+              onClick={() => handleExport(importType)}
+            >
+              Export
+            </button>
           </div>
         </Card>
       </div>
-
-      {/* Templates Section */}
-      <Card className="mt-8">
-        <CardHeader>
-          <CardTitle>CSV Templates</CardTitle>
-          <CardDescription>
-            Download template files with correct format for importing
-          </CardDescription>
-        </CardHeader>
-        <div className="p-6 pt-0">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {importOptions.map((option) => (
-              <Button
-                key={option.value}
-                variant="outline"
-                onClick={() => handleExport(`${option.value}_template`)}
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                {option.label} Template
-              </Button>
-            ))}
-          </div>
+      <Card>
+        <h2 className="text-lg font-semibold mb-4">Import History</h2>
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead>
+              <tr>
+                <th className="px-4 py-2">Date</th>
+                <th className="px-4 py-2">Type</th>
+                <th className="px-4 py-2">File</th>
+                <th className="px-4 py-2">Status</th>
+                <th className="px-4 py-2">Records</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="px-4 py-2 text-center" colSpan={5}>
+                  No import history found
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </Card>
     </div>

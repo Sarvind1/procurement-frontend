@@ -1,105 +1,69 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
-import { useAuthStore } from '@/stores/authStore'
-import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
-import { LoginCredentials } from '@/types'
+import { useAuthStore } from '@/stores/authStore'
 import toast from 'react-hot-toast'
 
-export function LoginPage() {
+export const LoginPage: React.FC = () => {
   const navigate = useNavigate()
   const login = useAuthStore((state) => state.login)
   const [isLoading, setIsLoading] = useState(false)
+  const [formData, setFormData] = useState({
+    username: '',
+    password: '',
+  })
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginCredentials>()
-
-  const onSubmit = async (data: LoginCredentials) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
     setIsLoading(true)
+
     try {
-      await login(data)
-      toast.success('Login successful!')
+      await login(formData)
+      toast.success('Login successful')
       navigate('/')
     } catch (error) {
-      toast.error('Invalid username or password')
+      toast.error('Invalid credentials')
     } finally {
       setIsLoading(false)
     }
   }
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <Input
-        label="Username"
-        type="text"
-        autoComplete="username"
-        {...register('username', { required: 'Username is required' })}
-        error={errors.username?.message}
-      />
-
-      <Input
-        label="Password"
-        type="password"
-        autoComplete="current-password"
-        {...register('password', { required: 'Password is required' })}
-        error={errors.password?.message}
-      />
-
-      <div className="flex items-center justify-between">
-        <div className="text-sm">
-          <a href="#" className="font-medium text-primary-600 hover:text-primary-500">
-            Forgot your password?
-          </a>
-        </div>
-      </div>
-
-      <Button type="submit" className="w-full" isLoading={isLoading}>
-        Sign in
-      </Button>
-
-      <div className="mt-6">
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300" />
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">Demo credentials</span>
-          </div>
-        </div>
-
-        <div className="mt-6 grid grid-cols-2 gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              handleSubmit(onSubmit)({
-                username: 'admin',
-                password: 'admin123',
-              } as LoginCredentials)
-            }}
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <Card>
+        <h2 className="text-2xl font-bold mb-4">Login</h2>
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <Input
+            label="Username"
+            type="text"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+            required
+          />
+          <Input
+            label="Password"
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+          />
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Admin
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              handleSubmit(onSubmit)({
-                username: 'user',
-                password: 'user123',
-              } as LoginCredentials)
-            }}
-          >
-            User
-          </Button>
-        </div>
-      </div>
-    </form>
+            {isLoading ? 'Logging in...' : 'Login'}
+          </button>
+        </form>
+      </Card>
+    </div>
   )
 }
