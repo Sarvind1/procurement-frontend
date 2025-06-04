@@ -24,6 +24,30 @@ export const useAuthStore = create<AuthState>()(
       login: async (credentials) => {
         set({ isLoading: true })
         try {
+          // For demo purposes, accept hardcoded credentials
+          if (
+            (credentials.username === 'admin' && credentials.password === 'admin123') ||
+            (credentials.username === 'user' && credentials.password === 'user123')
+          ) {
+            const mockToken = 'mock-jwt-token-' + Date.now()
+            const mockUser: User = {
+              id: 1,
+              username: credentials.username,
+              email: credentials.username + '@example.com',
+              is_active: true,
+              is_superuser: credentials.username === 'admin',
+              created_at: new Date().toISOString(),
+            }
+            
+            set({ 
+              token: mockToken, 
+              user: mockUser,
+              isAuthenticated: true,
+              isLoading: false 
+            })
+            return
+          }
+          
           const { data } = await api.post<AuthResponse>('/auth/login', credentials)
           const { access_token } = data
           
