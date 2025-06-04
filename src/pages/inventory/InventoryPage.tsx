@@ -7,7 +7,6 @@ import { productsService } from '@/services/products'
 import { InventoryMovement, InventoryMovementCreate, Product } from '@/types'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Select } from '@/components/ui/Select'
 import { Modal } from '@/components/ui/Modal'
 import { DataTable } from '@/components/ui/DataTable'
 import { Badge } from '@/components/ui/Badge'
@@ -21,14 +20,16 @@ export const InventoryPage: React.FC = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const queryClient = useQueryClient()
 
-  const { data: movements, isLoading } = useQuery({
+  const { data: movements, isLoading, error } = useQuery({
     queryKey: ['inventory-movements'],
     queryFn: () => inventoryService.getMovements(),
+    retry: 1,
   })
 
   const { data: products } = useQuery({
     queryKey: ['products'],
     queryFn: () => productsService.getAll(),
+    retry: 1,
   })
 
   const createMutation = useMutation({
@@ -38,6 +39,10 @@ export const InventoryPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['products'] })
       toast.success('Inventory movement recorded successfully')
       setIsCreateOpen(false)
+    },
+    onError: (error: any) => {
+      console.error('Error creating movement:', error)
+      toast.error(error.response?.data?.detail || 'Failed to create movement')
     },
   })
 
@@ -108,12 +113,6 @@ export const InventoryPage: React.FC = () => {
     },
   ]
 
-  const table = useReactTable({
-    data: movements || [],
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-  })
-
   // Calculate stats
   const stats = {
     totalMovements: movements?.length || 0,
@@ -126,35 +125,64 @@ export const InventoryPage: React.FC = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Inventory</h1>
-        <button className="bg-blue-500 text-white px-4 py-2 rounded">
+        <Button onClick={() => setIsCreateOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
           Add Movement
-        </button>
+        </Button>
       </div>
-      <div className="flex gap-4">
-        <Input placeholder="Search inventory..." className="flex-1" />
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Movements</CardTitle>
+            <p className="text-2xl font-bold">{stats.totalMovements}</p>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Purchases</CardTitle>
+            <p className="text-2xl font-bold text-green-600">{stats.purchases}</p>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Sales</CardTitle>
+            <p className="text-2xl font-bold text-blue-600">{stats.sales}</p>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Adjustments</CardTitle>
+            <p className="text-2xl font-bold text-yellow-600">{stats.adjustments}</p>
+          </CardHeader>
+        </Card>
       </div>
-      <Card>
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead>
-              <tr>
-                <th className="px-4 py-2">Product</th>
-                <th className="px-4 py-2">Type</th>
-                <th className="px-4 py-2">Quantity</th>
-                <th className="px-4 py-2">Date</th>
-                <th className="px-4 py-2">Reference</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="px-4 py-2 text-center" colSpan={5}>
-                  No inventory movements found
-                </td>
-              </tr>
-            </tbody>
-          </table>
+
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          Error loading inventory data: {error.message}
         </div>
+      )}
+
+      {/* Data Table */}
+      <Card>
+        <DataTable 
+          columns={columns} 
+          data={movements || []} 
+          isLoading={isLoading}
+        />
       </Card>
+
+      {/* Create Movement Modal */}
+      <MovementFormModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onSubmit={(data) => createMutation.mutate(data)}
+        isLoading={createMutation.isPending}
+        products={products || []}
+      />
     </div>
   )
 }
@@ -179,7 +207,10 @@ function MovementFormModal({
     handleSubmit,
     formState: { errors },
     reset,
+    watch,
   } = useForm<InventoryMovementCreate>()
+
+  const movementType = watch('movement_type')
 
   const handleFormSubmit = (data: InventoryMovementCreate) => {
     onSubmit({
@@ -190,32 +221,57 @@ function MovementFormModal({
     reset()
   }
 
+  const handleClose = () => {
+    reset()
+    onClose()
+  }
+
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
       title="Record Inventory Movement"
       size="md"
     >
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
-        <Select
-          label="Product"
-          options={products.map(p => ({ value: p.id, label: `${p.name} (${p.sku})` }))}
-          {...register('product_id', { required: 'Product is required' })}
-          error={errors.product_id?.message}
-        />
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Product
+          </label>
+          <select
+            {...register('product_id', { required: 'Product is required' })}
+            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="">Select a product</option>
+            {products.map(p => (
+              <option key={p.id} value={p.id}>
+                {p.name} ({p.sku})
+              </option>
+            ))}
+          </select>
+          {errors.product_id && (
+            <p className="mt-1 text-sm text-red-500">{errors.product_id.message}</p>
+          )}
+        </div>
 
-        <Select
-          label="Movement Type"
-          options={[
-            { value: 'purchase', label: 'Purchase' },
-            { value: 'sale', label: 'Sale' },
-            { value: 'adjustment', label: 'Adjustment' },
-            { value: 'return', label: 'Return' },
-          ]}
-          {...register('movement_type', { required: 'Movement type is required' })}
-          error={errors.movement_type?.message}
-        />
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Movement Type
+          </label>
+          <select
+            {...register('movement_type', { required: 'Movement type is required' })}
+            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="">Select movement type</option>
+            <option value="purchase">Purchase</option>
+            <option value="sale">Sale</option>
+            <option value="adjustment">Adjustment</option>
+            <option value="return">Return</option>
+          </select>
+          {errors.movement_type && (
+            <p className="mt-1 text-sm text-red-500">{errors.movement_type.message}</p>
+          )}
+        </div>
 
         <Input
           label="Quantity"
@@ -239,7 +295,7 @@ function MovementFormModal({
         />
 
         <div className="flex justify-end space-x-2 pt-4">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={handleClose}>
             Cancel
           </Button>
           <Button type="submit" isLoading={isLoading}>
